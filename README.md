@@ -28,9 +28,7 @@ There are a couple of Brainfuck code examples in the [examples folder](./example
 ## Examples:
 - The interpreter running the Tower of Hanoi code 
 
-<video src="./.github/hanoi.mp4" controls height="400">
-  Tower of Hanoi video example
-</video>
+![Hanoi example](./.github/hanoi.gif)
 
 - Example of running the REPL
 
