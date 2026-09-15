@@ -11,3 +11,7 @@ TARGET = bf$(EXE)
 
 $(TARGET): brainfuck.cpp
 	$(CXX) $^ $(CXXFLAGS) -o $@
+
+.PHONY: release
+release: brainfuck.cpp 
+	$(CXX) $^ $(CXXFLAGS) -O3 -o $(TARGET)

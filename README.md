@@ -24,7 +24,9 @@ There are a couple of Brainfuck code examples in the [examples folder](./example
 - note that `-repl` mode will not output anything unless you use Brainfuck to output a character. use `-repl -debug` for a nicer REPL experience.
 - You may use a file redirect to redirect a file contents in when using the repl. `./bf -repl < examples/99beers.bf`
     - Note that this behavior doesnt work in powershell and you must use a pipe instead `Get-Content examples/99beers.bf | ./bf -repl`
-- When running with `-debug` on, it will generate a "brainfuck" core dump of the entire array's snapshot in the file. When running in `-repl` mode, it will update 
+- When running with `-debug` on, it will generate a "Brainfuck" core dump of the entire array's snapshot in the file `bf.debug`. When running in `-repl` mode, it will update the debug file every cycle
+    - Note that Brainfuck core dumps will shown in hexadecimal values
+    - The `-debug` mode for `-repl` will be kind enough to print both the hexadecimal and decimal value of the cell your cursor is on every ccycle. 
 ## Examples:
 - The interpreter running the Tower of Hanoi code 
 
@@ -49,17 +51,20 @@ make
 
 # if you want to use clang instead
 make CXX=clang++
+
+# you may also make a release mode with -O3 optimzations for faster speeds
+make release
 ```
 ### Compiling directly with the compiler
 - Alternatively you can just compile them directly with the compiler
 ```bash
-g++ brainfuck.cpp -o bf     # gcc
-clang++ brainfuck.cpp -o bf # clang
+g++ -std=c++17 brainfuck.cpp -o bf     # gcc
+clang++ -std=c++17 brainfuck.cpp -o bf # clang
 ```
 - if you are brave enough to use MSVC
 - open developer powershell or cmd
 - type in:
 ```powershell
-cl brainfuck.cpp -o bf.exe
+cl -std=c++17 brainfuck.cpp -o bf.exe
 ```
 
