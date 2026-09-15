@@ -9,6 +9,8 @@
 
 const std::string DEBUG_FILE = "bf.debug";
 const std::string KEY_CHARACTERS = "><+-.,[]";
+const int ARRAY_POSITIONS = 30000;
+
 bool debug = false;
 
 std::atomic<bool> keep_running = true;
@@ -18,12 +20,22 @@ void sigint_handler(int signum) {
     if (debug) std::cout << "Received control + c (" << signum << ")" << std::endl;
 }
 
+std::string char_to_hexadecimal_str(char c) {
+    static const char hexChars[] = "0123456789ABCDEF";
+    unsigned char byte = static_cast<unsigned char>(c);
+    std::string hexa_str;
+    hexa_str += hexChars[byte >> 4];
+    hexa_str += hexChars[byte & 0x0F];
+    return hexa_str;
+}
+
 void write_to_debug(std::vector<char> &array) {
+
     std::ofstream debug_file(DEBUG_FILE);
     std::ostringstream memory_buffer;
 
     for (char &c : array) {
-        memory_buffer << static_cast<int>(c) << " ";
+        memory_buffer << char_to_hexadecimal_str(c) << " ";
     }
 
     debug_file << memory_buffer.str();
@@ -31,9 +43,9 @@ void write_to_debug(std::vector<char> &array) {
     debug_file.close();
 }
 
-unsigned int skip_loop(std::string &brainfuck_code, unsigned int starting_pos) {
+int skip_loop(std::string &brainfuck_code, int starting_pos) {
     std::stack<char> brackets;
-    for (unsigned int i = starting_pos; i < brainfuck_code.size(); i++) {
+    for (size_t i = starting_pos; i < brainfuck_code.size(); i++) {
         if (brainfuck_code[i] == ']') {
             brackets.pop();
             if (brackets.empty()) return i;
@@ -44,9 +56,9 @@ unsigned int skip_loop(std::string &brainfuck_code, unsigned int starting_pos) {
     return starting_pos;
 }
 
-unsigned int reset_loop(std::string &brainfuck_code, unsigned int starting_pos) {
+int reset_loop(std::string &brainfuck_code, int starting_pos) {
     std::stack<char> brackets;
-    for (unsigned int i = starting_pos; i > 0; i--) {
+    for (int i = starting_pos; i >= 0; i--) {
         if (brainfuck_code[i] == '[') {
             brackets.pop();
             if (brackets.empty()) return --i;
@@ -57,13 +69,13 @@ unsigned int reset_loop(std::string &brainfuck_code, unsigned int starting_pos) 
     return starting_pos;
 }
 
-unsigned int run_brainfuck(
+int run_brainfuck(
     std::string &brainfuck_code, 
     std::vector<char> &array,
-    unsigned int array_pos
+    int array_pos
 ) {
 
-    for (unsigned int i = 0; i < brainfuck_code.size(); i++) {
+    for (size_t i = 0; i < brainfuck_code.size(); i++) {
         if (!keep_running) {
             break;
         }
@@ -125,15 +137,15 @@ std::string remove_comments(std::string &brainfuck_code) {
 
 void run_brainfuck(std::string &brainfuck_code) {
     brainfuck_code = remove_comments(brainfuck_code);
-    std::vector<char> memories(30000, 0);
+    std::vector<char> memories(ARRAY_POSITIONS, 0);
     run_brainfuck(brainfuck_code, memories, 0);
     if (debug) write_to_debug(memories);
 }
 
 void run_brainfuck_repl() {
     if (debug) std::cout << "please use control + c to exit, enter clear to clear the terminal";
-    unsigned int array_pos = 0;
-    std::vector<char> memories(30000, 0);
+    int array_pos = 0;
+    std::vector<char> memories(ARRAY_POSITIONS, 0);
     std::string input;
     while (keep_running) {
         if (debug) std::cout << "\n> " << std::flush;
@@ -147,7 +159,7 @@ void run_brainfuck_repl() {
         array_pos = run_brainfuck(input, memories, array_pos);
         if (debug) {
             write_to_debug(memories);
-            std::cout << "\nCursor at: [" << array_pos << "]" << " Numeric value at position: [" << static_cast<int>(memories[array_pos]) << "]";
+            std::cout << "\nCursor at: [ " << array_pos << " ]," << " [ Numeric | Hexadecimal ] value at position: [ " << static_cast<int>(memories[array_pos]) << " | " << char_to_hexadecimal_str(memories[array_pos]) << " ]";
         }
         
         input.clear();
