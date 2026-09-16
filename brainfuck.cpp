@@ -5,7 +5,12 @@
 #include <vector>
 #include <stack>
 #include <csignal>
-#include <atomic>
+
+#ifdef __WIN32
+    // Me when the windows is sus
+#else
+    #include <unistd.h>
+#endif
 
 const std::string DEBUG_FILE = "bf.debug";
 const std::string KEY_CHARACTERS = "><+-.,[]";
@@ -13,13 +18,25 @@ const int ARRAY_POSITIONS = 30000;
 
 bool debug = false;
 
-std::atomic<bool> keep_running = true;
+volatile sig_atomic_t keep_running = 1;
 
 void sigint_handler(int signum) {
-    keep_running = false; 
-    if (debug) std::cout << "Received control + c (" << signum << ")" << std::endl;
+    keep_running = 0;
+    // disable the unused variable warning
+    (void)signum;
 }
 
+void add_sigint_handler() {
+#ifdef __WIN32
+    std::signal(SIGINT, sigint_handler);
+#else
+    struct sigaction action;
+    action.sa_handler = sigint_handler;
+    sigemptyset(&action.sa_mask);
+    action.sa_flags = 0;
+    sigaction(SIGINT, &action, NULL);
+#endif
+}
 std::string char_to_hexadecimal_str(char c) {
     static const char hexChars[] = "0123456789ABCDEF";
     unsigned char byte = static_cast<unsigned char>(c);
@@ -70,7 +87,7 @@ int reset_loop(std::string &brainfuck_code, int starting_pos) {
 }
 
 int run_brainfuck(
-    std::string &brainfuck_code, 
+    std::string &brainfuck_code,
     std::vector<char> &array,
     int array_pos
 ) {
@@ -83,9 +100,10 @@ int run_brainfuck(
         switch (token) {
             case '>':
                 array_pos++;
-                break; 
+                break;
             case '<':
                 array_pos--;
+
                 break;
             case '+':
                 array[array_pos]++;
@@ -98,7 +116,7 @@ int run_brainfuck(
                 break;
             case ',':
                 array[array_pos] = []() -> char {
-                    std::string input; 
+                    std::string input;
                     std::getline(std::cin, input);
                     return input.empty() ? 0 : input[0];
                 }();
@@ -143,55 +161,62 @@ void run_brainfuck(std::string &brainfuck_code) {
 }
 
 void run_brainfuck_repl() {
-    if (debug) std::cout << "please use control + c to exit, enter clear to clear the terminal";
+    if (debug) std::cout << "please use Ctrl+C to exit.\nEnter help to get help (debug mode only)";
     int array_pos = 0;
     std::vector<char> memories(ARRAY_POSITIONS, 0);
     std::string input;
     while (keep_running) {
         if (debug) std::cout << "\n> " << std::flush;
-        std::getline(std::cin, input);
-        if (std::cin.eof()) {
+        if (!std::getline(std::cin, input)) {
+            if (!keep_running) {
+                break;
+            }
             break;
-        } else if (input == "clear") {
-            std::cout << "\x1b[2J\x1b[3J\x1b[H" << std::flush;
-            continue;
+        }
+        if (debug) {
+            if (input == "clear") {
+                std::cout << "\x1b[2J\x1b[3J\x1b[H" << std::flush;
+                continue;
+            } else if (input == "help") {
+                std::cout << "Brainfuck REPL debug mode help options:" << std::endl;
+                std::cout << "  help: Print this nice help message" << std::endl;
+                std::cout << "  clear: Clear's the terminal output" << std::endl;
+                std::cout << "  Ctrl+C: exit the repl" << std::endl;
+                std::cout << "Note that these options (with the except of Ctrl+C) only work in the repl when debug mode is on" << std::endl;
+                continue;
+            }
         }
         array_pos = run_brainfuck(input, memories, array_pos);
         if (debug) {
             write_to_debug(memories);
             std::cout << "\nCursor at: [ " << array_pos << " ]," << " [ Numeric | Hexadecimal ] value at position: [ " << static_cast<int>(memories[array_pos]) << " | " << char_to_hexadecimal_str(memories[array_pos]) << " ]";
         }
-        
+
         input.clear();
     }
-    
 }
 
 std::string loadFileToString(const std::string& filename) {
     std::ifstream fileStream(filename);
-    
+
     if (!fileStream.is_open()) {
         throw std::runtime_error("Error: The file '" + filename + "' could not be found or opened.");
     }
-    
+
     std::stringstream buffer;
     buffer << fileStream.rdbuf();
-    
+
     return buffer.str();
 }
 
 int main(int argc, char* argv[]) {
-    std::signal(SIGINT, sigint_handler);
+    add_sigint_handler();
 
-    if (argc == 1) {
-        std::cout << "Not enough arguments. Use -h for help" << std::endl;
-        return 0;
-    }
 
 
     bool inplace = false;
     bool use_repl = false;
-    
+
     std::vector<std::string> cleaned_arguments;
     for (int i = 1; i<argc; i++) {
         std::string arg = std::string(argv[i]);
@@ -213,11 +238,15 @@ int main(int argc, char* argv[]) {
         }
     }
 
-
     if (use_repl == true) {
         run_brainfuck_repl();
         return 0;
-    } 
+    }
+
+    if (cleaned_arguments.empty()) {
+        std::cout << "Not enough arguments. Use -h for help" << std::endl;
+        return 0;
+    }
 
     std::string brainfuck_code;
     for (std::string &s : cleaned_arguments) {
@@ -231,9 +260,8 @@ int main(int argc, char* argv[]) {
                 return 1;
             }
         }
-        
-    }
 
+    }
 
     run_brainfuck(brainfuck_code);
 }
