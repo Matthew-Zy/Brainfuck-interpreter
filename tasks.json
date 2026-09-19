@@ -1,0 +1,24 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "shell", // Changed from cppbuild to shell
+            "label": "compile bf",
+            "command": "make",
+            "args": [
+                "CXXFLAGS=-std=c++17 -Wall -Wextra -Wunused -g"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "Build with makefile"
+        }
+    ]
+}

@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug brainfuck",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/bf.exe",
+      "args": ["-i", "++[>+<-]>."],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "compile bf"
+    }
+  ]
+}
